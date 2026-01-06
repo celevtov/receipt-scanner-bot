@@ -38,6 +38,6 @@ async def generate_data_for_request(messages:List[Message]):
 
     if messages[-1].caption:
         user_text = messages[-1].caption
-        user_data['caption']={"type": "input_text",'text': user_text}
+        user_data['caption']={"type": "input_text",'text': str(user_text)}
 
     return user_data

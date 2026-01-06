@@ -1,49 +1,23 @@
 from openai import AsyncOpenAI
+from config import config as cfg
+from typing import Any, Dict, List
+from .promt import TEXT
+
+ClientOpenAi = AsyncOpenAI(api_key = cfg.OPENAI_API_KEY)
 
 
-TEXT = """
-Ты анализируешь фотографии кассовых чеков.
+async def generate_json(user_data: dict[str, Any]) -> dict[str, Any]:
+    content_obj: List[Dict[str, Any]] = [{"type": "input_text","text":TEXT}]
 
-Вход:
-- Одна или несколько фотографий одного чека (в правильном порядке сверху вниз).
-- Возможны искажения, обрезки, тени, поворот.
+    if 'caption' in user_data:
+        content_obj.append(user_data['caption'])
+    content_obj.extend(user_data['list_files'])
 
-Задача:
-Распознать чек и вернуть результат СТРОГО в формате JSON, без пояснений, комментариев и дополнительного текста.
-
-Требования к логике:
-- Если чек разбит на несколько фото — объединить данные.
-- Если поле невозможно определить достоверно — указать null.
-- Перевести позиции товаров на английский
-- для каждой позиции добавить категорию товара
-- Числа возвращать как числа, не строки.
-- Десятичный разделитель — точка.
-- Валюту определить по символам или контексту, иначе null.
-- Если есть скидки — учесть их в итоговой сумме.
-- Проверить: сумма позиций + скидки = total. Если не сходится, total оставить как указано в чеке.
-
-Формат JSON (строго):
-{
-  "store": string | null,
-  "date": string | null,          // ISO-8601: YYYY-MM-DD, если возможно
-  "currency": string | null,      // ISO 4217, например ILS, EUR, USD
-  "total": number | null,
-  "items": [
-    {
-      "name": string,
-      "category": string,
-      "qty": number,
-      "unit_price": number | null,
-      "line_total": number | null
-    }
-  ]
-}
-
-Запрещено:
-- Любой текст вне JSON
-- Комментарии
-- Объяснения
-- Markdown
-"""
-
-
+    resp = await ClientOpenAi.responses.create(
+        model = cfg.OPENAI_MODEL,
+        input = [{
+            "role":"user"
+            ,"content":content_obj
+        }]
+    )
+    return resp.output_text
