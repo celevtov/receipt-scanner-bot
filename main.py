@@ -1,26 +1,19 @@
-#!/usr/bin/python
-
-# This is a simple echo bot using the decorator mechanism.
-# It echoes any incoming text messages.
 import asyncio
+import logging
+from aiogram import Dispatcher, Bot
+from routers import root_router
+from config import config as cfg
 
-from telebot.async_telebot import AsyncTeleBot
-from config import config
+bot = Bot(token=cfg.BOT_TOKEN)
 
-bot = AsyncTeleBot(config.BOT_TOKEN)
-
-
-# Handle '/start' and '/help'
-@bot.message_handler(commands=['help', 'start'])
-async def send_welcome(message):
-    text = 'Hi, I am EchoBot.\nJust write me something and I will repeat it!'
-    await bot.reply_to(message, text)
+dp = Dispatcher()
 
 
-# Handle all other messages with content_type 'text' (content_types defaults to ['text'])
-@bot.message_handler(func=lambda message: True)
-async def echo_message(message):
-    await bot.reply_to(message, message.text)
+async def main() -> None:
+    dp = Dispatcher()
+    dp.include_router(root_router)
+    await dp.start_polling(bot)
 
-if __name__ == '__main__':
-    asyncio.run(bot.polling())
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())
